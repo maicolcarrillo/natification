@@ -1,20 +1,18 @@
 <template>
   <div
-    class="min-h-screen flex flex-col md:flex-row items-center justify-center bg-gray-100/60 backdrop-blur-md p-6 space-y-6 md:space-y-0 md:space-x-6"
-  >
+    class="min-h-screen flex flex-col md:flex-row items-center justify-center bg-gray-100/60 backdrop-blur-md p-6 space-y-6 md:space-y-0 md:space-x-6">
+
     <!-- Formulario -->
     <div
-      class="w-full max-w-md bg-white shadow-2xl rounded-2xl p-6 space-y-6 border border-orange-200 transition-all duration-300"
-    >
+      class="w-full max-w-md bg-white shadow-2xl rounded-2xl p-6 space-y-6 border border-orange-200 transition-all duration-300">
+
       <!-- Selector SHA -->
       <div class="flex justify-center">
-        <nav
-          class="flex overflow-x-auto items-center p-1 space-x-1 text-sm text-gray-600 bg-gray-100 rounded-xl"
-        >
+        <nav class="flex overflow-x-auto items-center p-1 space-x-1 text-sm text-gray-600 bg-gray-100 rounded-xl">
           <button
             role="tab"
             type="button"
-            :class="[ 
+            :class="[
               'flex whitespace-nowrap items-center h-8 px-5 font-medium rounded-lg outline-none transition-all duration-300',
               selectedSHA === 'SHA-1'
                 ? 'text-[#FF8000] bg-white shadow focus:ring-2 focus:ring-[#FF8000] focus:ring-inset'
@@ -28,7 +26,7 @@
           <button
             role="tab"
             type="button"
-            :class="[ 
+            :class="[
               'flex whitespace-nowrap items-center h-8 px-5 font-medium rounded-lg outline-none transition-all duration-300',
               selectedSHA === 'SHA-256'
                 ? 'text-[#FF8000] bg-white shadow focus:ring-2 focus:ring-[#FF8000] focus:ring-inset'
@@ -46,9 +44,7 @@
         <h2 class="text-lg font-semibold text-gray-800 mb-4">Autenticación</h2>
         <div class="space-y-4">
           <div>
-            <label for="login" class="block text-sm font-medium text-gray-700 mb-1">
-              Login
-            </label>
+            <label for="login" class="block text-sm font-medium text-gray-700 mb-1">Login</label>
             <input
               v-model="login"
               type="text"
@@ -59,9 +55,7 @@
           </div>
 
           <div>
-            <label for="secretkey" class="block text-sm font-medium text-gray-700 mb-1">
-              SecretKey
-            </label>
+            <label for="secretkey" class="block text-sm font-medium text-gray-700 mb-1">SecretKey</label>
             <input
               v-model="secretKey"
               type="password"
@@ -78,9 +72,7 @@
         <h2 class="text-lg font-semibold text-gray-800 mb-4">Datos a Notificar</h2>
         <div class="space-y-4">
           <div>
-            <label for="referencia" class="block text-sm font-medium text-gray-700 mb-1">
-              Referencia
-            </label>
+            <label for="referencia" class="block text-sm font-medium text-gray-700 mb-1">Referencia</label>
             <input
               v-model="referencia"
               type="text"
@@ -91,9 +83,7 @@
           </div>
 
           <div>
-            <label for="sesion" class="block text-sm font-medium text-gray-700 mb-1">
-              Sesión (RequestId)
-            </label>
+            <label for="sesion" class="block text-sm font-medium text-gray-700 mb-1">Sesión (RequestId)</label>
             <input
               v-model="sesion"
               type="text"
@@ -104,9 +94,7 @@
           </div>
 
           <div>
-            <label for="url" class="block text-sm font-medium text-gray-700 mb-1">
-              URL de Notificación
-            </label>
+            <label for="url" class="block text-sm font-medium text-gray-700 mb-1">URL de Notificación</label>
             <input
               v-model="url"
               type="url"
@@ -117,9 +105,7 @@
           </div>
 
           <div>
-            <label for="status" class="block text-sm font-medium text-gray-700 mb-1">
-              Status
-            </label>
+            <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
             <select
               v-model="status"
               id="status"
@@ -134,7 +120,7 @@
       </div>
 
       <!-- Botones -->
-      <div class="flex gap-3">
+      <div class="flex flex-wrap gap-3">
         <button
           @click="enviarDatos"
           class="flex-1 bg-[#FF8000] hover:bg-[#e67200] text-white font-medium py-2 px-4 rounded-lg shadow-lg transition-all duration-300"
@@ -148,6 +134,27 @@
         >
           Generar TranKey
         </button>
+
+        <button
+          @click="mostrarConsulta = !mostrarConsulta"
+          class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg shadow-lg transition-all duration-300"
+        >
+          Consulta de sesión
+        </button>
+      </div>
+
+      <!-- Campo dinámico de consulta -->
+      <div v-if="mostrarConsulta" class="mt-4 border-t border-gray-200 pt-4 space-y-4">
+        <label for="consultaRequest" class="block text-sm font-medium text-gray-700 mb-1">
+          Ingresar RequestId que deseas consultar
+        </label>
+        <input
+          v-model="consultaRequestId"
+          id="consultaRequest"
+          type="text"
+          class="py-2 px-3 block w-full border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          placeholder="Ej: 654321"
+        />
       </div>
     </div>
 
@@ -171,11 +178,8 @@
         Copiar
       </button>
 
-      <!-- Respuesta del Servidor -->
       <div v-if="respuestaServidor && mostrarRespuesta" class="mt-6">
-        <h3 class="text-lg font-semibold text-gray-800 mb-4">
-          Respuesta del Servidor
-        </h3>
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">Respuesta del Servidor</h3>
         <pre
           class="bg-gray-50 p-4 rounded-lg overflow-x-auto text-sm text-gray-700 border border-gray-200 whitespace-pre-wrap"
         >
@@ -202,6 +206,8 @@ const jsonResultado = ref(null)
 const respuestaServidor = ref(null)
 const tranKey = ref('')
 const mostrarRespuesta = ref(false)
+const mostrarConsulta = ref(false)
+const consultaRequestId = ref('')
 
 // === FUNCIÓN PARA GENERAR TRANKEY ===
 function autenticar() {
@@ -215,15 +221,9 @@ function autenticar() {
   const hash = CryptoJS.SHA256(nonce + seed + secretKey.value)
   tranKey.value = hash.toString(CryptoJS.enc.Base64)
 
-  const auth = {
-    login: login.value,
-    tranKey: tranKey.value,
-    nonce: btoa(nonce),
-    seed
-  }
-
+  const auth = { login: login.value, tranKey: tranKey.value, nonce: btoa(nonce), seed }
   jsonResultado.value = JSON.stringify(auth, null, 2)
-  mostrarRespuesta.value = false // 🔸 No mostrar respuesta ni errores
+  mostrarRespuesta.value = false
 }
 
 // === FUNCIÓN PARA ENVIAR DATOS ===
@@ -234,16 +234,11 @@ async function enviarDatos() {
   }
 
   mostrarRespuesta.value = true
-
-  // Calculamos firma correcta según la documentación
   const date = new Date().toISOString()
-  let firma
-
-  if (selectedSHA.value === 'SHA-1') {
-    firma = CryptoJS.SHA1(sesion.value + status.value + date + secretKey.value).toString(CryptoJS.enc.Hex)
-  } else {
-    firma = CryptoJS.SHA256(sesion.value + status.value + date + secretKey.value).toString(CryptoJS.enc.Hex)
-  }
+  let firma =
+    selectedSHA.value === 'SHA-1'
+      ? CryptoJS.SHA1(sesion.value + status.value + date + secretKey.value).toString(CryptoJS.enc.Hex)
+      : CryptoJS.SHA256(sesion.value + status.value + date + secretKey.value).toString(CryptoJS.enc.Hex)
 
   const data = {
     status: {
@@ -261,22 +256,25 @@ async function enviarDatos() {
   respuestaServidor.value = '⏳ Enviando notificación...'
 
   try {
-    const response = await fetch(url.value, {
+    const workerUrl = `https://cold-tooth-8a32.maicolpruebas4.workers.dev/?url=${encodeURIComponent(url.value)}`
+    const response = await fetch(workerUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     })
 
     const contentType = response.headers.get('content-type')
+    let respuesta
+
     if (contentType && contentType.includes('application/json')) {
-      const respuesta = await response.json()
+      respuesta = await response.json()
       respuestaServidor.value = JSON.stringify(respuesta, null, 2)
     } else {
       const text = await response.text()
-      respuestaServidor.value = text || '(Sin contenido de respuesta)'
+      respuestaServidor.value = text?.trim() || '(Sin contenido de respuesta)'
     }
   } catch (error) {
-    respuestaServidor.value = `(No se pudo obtener respuesta del servidor)`
+    respuestaServidor.value = `❌ Error al enviar notificación: ${error.message}`
   }
 }
 
