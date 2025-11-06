@@ -1,23 +1,21 @@
 <template>
   <div
-    class="min-h-screen flex flex-col md:flex-row items-center justify-center bg-gray-100/60 backdrop-blur-md p-6 space-y-6 md:space-y-0 md:space-x-6">
-
+    class="min-h-screen flex flex-col md:flex-row items-center justify-center bg-gray-100/60 backdrop-blur-md p-6 space-y-6 md:space-y-0 md:space-x-6"
+  >
     <!-- Formulario -->
     <div
-      class="w-full max-w-md bg-white shadow-2xl rounded-2xl p-6 space-y-6 border border-orange-200 transition-all duration-300">
-
+      class="w-full max-w-md bg-white shadow-2xl rounded-2xl p-6 space-y-6 border border-orange-200 transition-all duration-300"
+    >
       <!-- Selector SHA -->
       <div class="flex justify-center">
         <nav class="flex overflow-x-auto items-center p-1 space-x-1 text-sm text-gray-600 bg-gray-100 rounded-xl">
           <button
             role="tab"
             type="button"
-            :class="[
-              'flex whitespace-nowrap items-center h-8 px-5 font-medium rounded-lg outline-none transition-all duration-300',
+            :class="[ 'flex whitespace-nowrap items-center h-8 px-5 font-medium rounded-lg outline-none transition-all duration-300',
               selectedSHA === 'SHA-1'
                 ? 'text-[#FF8000] bg-white shadow focus:ring-2 focus:ring-[#FF8000] focus:ring-inset'
-                : 'hover:text-gray-800 focus:text-[#FF8000]'
-            ]"
+                : 'hover:text-gray-800 focus:text-[#FF8000]' ]"
             @click="selectedSHA = 'SHA-1'"
           >
             SHA-1
@@ -26,12 +24,10 @@
           <button
             role="tab"
             type="button"
-            :class="[
-              'flex whitespace-nowrap items-center h-8 px-5 font-medium rounded-lg outline-none transition-all duration-300',
+            :class="[ 'flex whitespace-nowrap items-center h-8 px-5 font-medium rounded-lg outline-none transition-all duration-300',
               selectedSHA === 'SHA-256'
                 ? 'text-[#FF8000] bg-white shadow focus:ring-2 focus:ring-[#FF8000] focus:ring-inset'
-                : 'hover:text-gray-800 focus:text-[#FF8000]'
-            ]"
+                : 'hover:text-gray-800 focus:text-[#FF8000]' ]"
             @click="selectedSHA = 'SHA-256'"
           >
             SHA-256
@@ -145,6 +141,17 @@
 
       <!-- Campo dinámico de consulta -->
       <div v-if="mostrarConsulta" class="mt-4 border-t border-gray-200 pt-4 space-y-4">
+        <label for="consultaEndpoint" class="block text-sm font-medium text-gray-700 mb-1">
+          Endpoint Base
+        </label>
+        <input
+          v-model="consultaEndpoint"
+          id="consultaEndpoint"
+          type="url"
+          class="py-2 px-3 block w-full border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          placeholder="https://checkout-test.placetopay.com"
+        />
+
         <label for="consultaRequest" class="block text-sm font-medium text-gray-700 mb-1">
           Ingresar RequestId que deseas consultar
         </label>
@@ -155,6 +162,13 @@
           class="py-2 px-3 block w-full border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           placeholder="Ej: 654321"
         />
+
+        <button
+          @click="consultarSesion"
+          class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg shadow-lg transition-all duration-300"
+        >
+          Consultar sesión
+        </button>
       </div>
     </div>
 
@@ -208,8 +222,10 @@ const tranKey = ref('')
 const mostrarRespuesta = ref(false)
 const mostrarConsulta = ref(false)
 const consultaRequestId = ref('')
+const consultaEndpoint = ref('https://checkout-test.placetopay.com')
+let authActual = null
 
-// === FUNCIÓN PARA GENERAR TRANKEY ===
+// === GENERAR TRANKEY ===
 function autenticar() {
   if (!login.value || !secretKey.value) {
     alert('Por favor ingresa login y SecretKey primero.')
@@ -221,12 +237,64 @@ function autenticar() {
   const hash = CryptoJS.SHA256(nonce + seed + secretKey.value)
   tranKey.value = hash.toString(CryptoJS.enc.Base64)
 
-  const auth = { login: login.value, tranKey: tranKey.value, nonce: btoa(nonce), seed }
-  jsonResultado.value = JSON.stringify(auth, null, 2)
+  authActual = {
+    login: login.value,
+    tranKey: tranKey.value,
+    nonce: btoa(nonce),
+    seed
+  }
+
+  jsonResultado.value = JSON.stringify(authActual, null, 2)
   mostrarRespuesta.value = false
 }
 
-// === FUNCIÓN PARA ENVIAR DATOS ===
+// === CONSULTAR SESIÓN ===
+async function consultarSesion() {
+  if (!consultaEndpoint.value || !consultaRequestId.value) {
+    alert('Por favor completa el Endpoint y el RequestId.')
+    return
+  }
+
+  if (!authActual) {
+    alert('Primero genera el TranKey para autenticar la solicitud.')
+    return
+  }
+
+  // Validar que el endpoint tenga la palabra 'test'
+  if (!consultaEndpoint.value.toLowerCase().includes('test')) {
+    alert('SOLO PUEDES CONSULTAR TRANSACCIONES EN AMBIENTE DE TEST.')
+    return
+  }
+
+  mostrarRespuesta.value = true
+  respuestaServidor.value = '⏳ Consultando sesión...'
+
+  try {
+    // Siempre usa la ruta /api/session/{id}
+    const urlConsulta = `${consultaEndpoint.value}/api/session/${consultaRequestId.value}`
+
+    const response = await fetch(urlConsulta, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ auth: authActual })
+    })
+
+    const contentType = response.headers.get('content-type')
+    let data
+
+    if (contentType && contentType.includes('application/json')) {
+      data = await response.json()
+      respuestaServidor.value = JSON.stringify(data, null, 2)
+    } else {
+      const text = await response.text()
+      respuestaServidor.value = text?.trim() || '(Sin contenido de respuesta)'
+    }
+  } catch (error) {
+    respuestaServidor.value = `❌ Error al consultar sesión: ${error.message}`
+  }
+}
+
+// === ENVIAR DATOS (sin cambios previos) ===
 async function enviarDatos() {
   if (!url.value) {
     alert('Por favor ingresa la URL de notificación.')
